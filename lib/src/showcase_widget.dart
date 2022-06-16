@@ -177,8 +177,8 @@ class ShowCaseWidgetState extends State<ShowCaseWidget> {
   @override
   Widget build(BuildContext context) {
     return _InheritedShowCaseView(
-      child: widget.builder,
       activeWidgetIds: ids?.elementAt(activeWidgetId!),
+      child: widget.builder,
     );
   }
 }
@@ -186,7 +186,7 @@ class ShowCaseWidgetState extends State<ShowCaseWidget> {
 class _InheritedShowCaseView extends InheritedWidget {
   final GlobalKey? activeWidgetIds;
 
-  _InheritedShowCaseView({
+  const _InheritedShowCaseView({
     required this.activeWidgetIds,
     required Widget child,
   }) : super(child: child);
