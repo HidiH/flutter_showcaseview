@@ -182,7 +182,7 @@ class _ShowcaseState extends State<Showcase> {
     });
 
     if (activeStep == widget.key) {
-      if (ShowCaseWidget.of(context).enableAutoScroll) {
+      if (ShowCaseWidget.of(context).enableAutoScroll && !widget.forcePositionAbove) {
         _scrollIntoView();
       }
 
