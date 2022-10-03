@@ -62,6 +62,13 @@ class Showcase extends StatefulWidget {
   final EdgeInsets overlayPadding;
   final VoidCallback? onTargetDoubleTap;
   final VoidCallback? onTargetLongPress;
+  final BorderRadius? tipBorderRadius;
+
+  /// if disableDefaultTargetGestures parameter is true
+  /// onTargetClick, onTargetDoubleTap, onTargetLongPress and
+  /// disposeOnTap parameter will not work
+  ///
+  final bool disableDefaultTargetGestures;
   final bool forcePositionAbove;
 
   /// Defines blur value.
@@ -99,6 +106,8 @@ class Showcase extends StatefulWidget {
     this.radius,
     this.onTargetLongPress,
     this.onTargetDoubleTap,
+    this.tipBorderRadius,
+    this.disableDefaultTargetGestures = false,
     this.forcePositionAbove = false,
   })  : height = null,
         width = null,
@@ -143,6 +152,8 @@ class Showcase extends StatefulWidget {
     this.blurValue,
     this.onTargetLongPress,
     this.onTargetDoubleTap,
+    this.tipBorderRadius,
+    this.disableDefaultTargetGestures = false,
     this.forcePositionAbove = false,
   })  : showArrow = false,
         onToolTipClick = null,
@@ -150,7 +161,7 @@ class Showcase extends StatefulWidget {
             "overlay opacity must be between 0 and 1.");
 
   @override
-  _ShowcaseState createState() => _ShowcaseState();
+  State<Showcase> createState() => _ShowcaseState();
 }
 
 class _ShowcaseState extends State<Showcase> {
@@ -275,7 +286,11 @@ class _ShowcaseState extends State<Showcase> {
         ? Stack(
             children: [
               GestureDetector(
-                onTap: _nextIfAny,
+                onTap: () {
+                  if (!showCaseWidgetState.disableBarrierInteraction) {
+                    _nextIfAny();
+                  }
+                },
                 child: ClipPath(
                   clipper: RRectClipper(
                     area: _isScrollRunning ? Rect.zero : rectBound,
@@ -318,6 +333,8 @@ class _ShowcaseState extends State<Showcase> {
                   onDoubleTap: widget.onTargetDoubleTap,
                   onLongPress: widget.onTargetLongPress,
                   shapeBorder: widget.shapeBorder,
+                  disableDefaultChildGestures:
+                      widget.disableDefaultTargetGestures,
                 ),
               if (!_isScrollRunning)
                 ToolTipWidget(
@@ -339,6 +356,7 @@ class _ShowcaseState extends State<Showcase> {
                   disableAnimation: widget.disableAnimation ??
                       showCaseWidgetState.disableAnimation,
                   animationDuration: widget.animationDuration,
+                  borderRadius: widget.tipBorderRadius,
                   forcePositionAbove: widget.forcePositionAbove,
                 ),
             ],
@@ -355,6 +373,7 @@ class _TargetWidget extends StatelessWidget {
   final VoidCallback? onLongPress;
   final ShapeBorder? shapeBorder;
   final BorderRadius? radius;
+  final bool disableDefaultChildGestures;
 
   const _TargetWidget({
     Key? key,
@@ -365,6 +384,7 @@ class _TargetWidget extends StatelessWidget {
     this.radius,
     this.onDoubleTap,
     this.onLongPress,
+    this.disableDefaultChildGestures = false,
   }) : super(key: key);
 
   @override
@@ -372,7 +392,16 @@ class _TargetWidget extends StatelessWidget {
     return Positioned(
       top: offset.dy,
       left: offset.dx,
-      child: FractionalTranslation(
+      child: disableDefaultChildGestures
+          ? IgnorePointer(
+              child: _targetWidgetLayer(),
+            )
+          : _targetWidgetLayer(),
+    );
+  }
+
+  Widget _targetWidgetLayer() {
+    returnFractionalTranslation(
         translation: const Offset(-0.5, -0.5),
         child: GestureDetector(
           onTap: onTap,
@@ -386,11 +415,10 @@ class _TargetWidget extends StatelessWidget {
                   ? RoundedRectangleBorder(borderRadius: radius!)
                   : shapeBorder ??
                       const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(8),
-                        ),
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(8),
                       ),
-            ),
+                    ),
           ),
         ),
       ),

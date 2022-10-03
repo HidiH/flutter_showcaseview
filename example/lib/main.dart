@@ -181,9 +181,14 @@ class _MailPageState extends State<MailPage> {
                                     Showcase(
                                       key: _one,
                                       description: 'Tap to see menu options',
-                                      child: Icon(
-                                        Icons.menu,
-                                        color: Theme.of(context).primaryColor,
+                                      disableDefaultTargetGestures: true,
+                                      child: GestureDetector(
+                                        onTap: () =>
+                                            print('menu button clicked'),
+                                        child: Icon(
+                                          Icons.menu,
+                                          color: Theme.of(context).primaryColor,
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(
@@ -212,7 +217,7 @@ class _MailPageState extends State<MailPage> {
                     ),
                     Showcase(
                       overlayPadding: const EdgeInsets.all(5),
-                      key: _two,
+                      key: _one,
                       title: 'Profile',
                       description:
                           "Tap to see profile which contains user's name, profile picture, mobile number and country",

@@ -27,6 +27,8 @@ import 'package:flutter/material.dart';
 import 'get_position.dart';
 import 'measure_size.dart';
 
+const _kDefaultPaddingFromParent = 14.0;
+
 class ToolTipWidget extends StatefulWidget {
   final GetPosition? position;
   final Offset? offset;
@@ -45,9 +47,11 @@ class ToolTipWidget extends StatefulWidget {
   final EdgeInsets? contentPadding;
   final Duration animationDuration;
   final bool disableAnimation;
+  final BorderRadius? borderRadius;
   final bool forcePositionAbove;
 
   const ToolTipWidget({
+    Key? key,
     required this.position,
     required this.offset,
     required this.screenSize,
@@ -65,11 +69,12 @@ class ToolTipWidget extends StatefulWidget {
     required this.animationDuration,
     this.contentPadding = const EdgeInsets.symmetric(vertical: 8),
     required this.disableAnimation,
+    required this.borderRadius,
     required this.forcePositionAbove,
-  });
+  }) : super(key: key);
 
   @override
-  _ToolTipWidgetState createState() => _ToolTipWidgetState();
+  State<ToolTipWidget> createState() => _ToolTipWidgetState();
 }
 
 class _ToolTipWidgetState extends State<ToolTipWidget>
@@ -80,6 +85,10 @@ class _ToolTipWidgetState extends State<ToolTipWidget>
 
   late final AnimationController _parentController;
   late final Animation<double> _curvedAnimation;
+
+  double tooltipWidth = 0;
+  double tooltipScreenEdgePadding = 20;
+  double tooltipTextPadding = 15;
 
   bool isCloseToTopOrBottom(Offset position) {
     var height = 120.0;
@@ -101,7 +110,7 @@ class _ToolTipWidgetState extends State<ToolTipWidget>
     }
   }
 
-  double _getTooltipWidth() {
+  void _getTooltipWidth() {
     final titleStyle = widget.titleTextStyle ??
         Theme.of(context)
             .textTheme
@@ -117,59 +126,44 @@ class _ToolTipWidgetState extends State<ToolTipWidget>
         : _textSize(widget.title!, titleStyle).width +
             widget.contentPadding!.right +
             widget.contentPadding!.left;
-    final descriptionLength =
-        _textSize(widget.description!, descriptionStyle).width +
+    final descriptionLength = widget.description == null
+        ? 0
+        : (_textSize(widget.description!, descriptionStyle).width +
             widget.contentPadding!.right +
-            widget.contentPadding!.left;
+            widget.contentPadding!.left);
     var maxTextWidth = max(titleLength, descriptionLength);
-    if (maxTextWidth > widget.screenSize!.width - 20) {
-      return widget.screenSize!.width - 20;
+    if (maxTextWidth > widget.screenSize!.width - tooltipScreenEdgePadding) {
+      tooltipWidth = widget.screenSize!.width - tooltipScreenEdgePadding;
     } else {
-      return maxTextWidth + 15;
+      tooltipWidth = maxTextWidth + tooltipTextPadding;
     }
-  }
-
-  bool _isLeft() {
-    final screenWidth = widget.screenSize!.width / 3;
-    return !(screenWidth <= widget.position!.getCenter());
-  }
-
-  bool _isRight() {
-    final screenWidth = widget.screenSize!.width / 3;
-    return ((screenWidth * 2) <= widget.position!.getCenter());
   }
 
   double? _getLeft() {
-    if (_isLeft()) {
-      var leftPadding =
-          widget.position!.getCenter() - (_getTooltipWidth() * 0.1);
-      if (leftPadding + _getTooltipWidth() > widget.screenSize!.width) {
-        leftPadding = (widget.screenSize!.width - 20) - _getTooltipWidth();
+    if (widget.position != null) {
+      double leftPositionValue =
+          widget.position!.getCenter() - (tooltipWidth * 0.5);
+      if ((leftPositionValue + tooltipWidth) >
+          MediaQuery.of(context).size.width) {
+        return null;
+      } else if ((leftPositionValue) < _kDefaultPaddingFromParent) {
+        return _kDefaultPaddingFromParent;
+      } else {
+        return leftPositionValue;
       }
-      if (leftPadding < 20) {
-        leftPadding = 14;
-      }
-      return leftPadding;
-    } else if (!(_isRight())) {
-      return widget.position!.getCenter() - (_getTooltipWidth() * 0.5);
-    } else {
-      return null;
     }
+    return null;
   }
 
   double? _getRight() {
-    if (_isRight()) {
-      var rightPadding =
-          widget.position!.getCenter() + (_getTooltipWidth() / 2);
-      if (rightPadding + _getTooltipWidth() > widget.screenSize!.width) {
-        rightPadding = 14;
-      }
-      return rightPadding;
-    } else if (!(_isLeft())) {
-      return widget.position!.getCenter() - (_getTooltipWidth() * 0.5);
-    } else {
-      return null;
+    if (widget.position != null) {
+      var rightPosition = widget.position!.getCenter() + (tooltipWidth * 0.5);
+
+      return (rightPosition + tooltipWidth) > MediaQuery.of(context).size.width
+          ? _kDefaultPaddingFromParent
+          : null;
     }
+    return null;
   }
 
   double _getSpace() {
@@ -207,6 +201,12 @@ class _ToolTipWidgetState extends State<ToolTipWidget>
     if (!widget.disableAnimation) {
       _parentController.forward();
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    _getTooltipWidth();
+    super.didChangeDependencies();
   }
 
   @override
@@ -301,11 +301,12 @@ class _ToolTipWidgetState extends State<ToolTipWidget>
                         bottom: isArrowUp ? 0 : arrowHeight - 1,
                       ),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius:
+                            widget.borderRadius ?? BorderRadius.circular(8.0),
                         child: GestureDetector(
                           onTap: widget.onTooltipTap,
                           child: Container(
-                            width: _getTooltipWidth(),
+                            width: tooltipWidth,
                             padding: widget.contentPadding,
                             color: widget.tooltipColor,
                             child: Column(
